@@ -10,51 +10,48 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal;
 
+using NpgsqlTypes;
+
 namespace Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Internal
 {
     internal class NpgsqlRumMethodTranslator : IMethodCallTranslator
     {
+        static readonly Dictionary<MethodInfo, string> Functions = new Dictionary<MethodInfo, string>
+        {
+            [GetRuntimeMethod(nameof(NpgsqlRumLinqExtensions.Score), new[] { typeof(NpgsqlTsVector), typeof(NpgsqlTsQuery) })] = "rum_ts_score"
+        };
+
+        static readonly Dictionary<MethodInfo, string> DoubleReturningOperators = new Dictionary<MethodInfo, string>
+        {
+            [GetRuntimeMethod(nameof(NpgsqlRumLinqExtensions.Distance), new[] { typeof(NpgsqlTsVector), typeof(NpgsqlTsQuery) })] = "<=>"
+        };
+
+        static MethodInfo GetRuntimeMethod(string name, params Type[] parameters)
+            => typeof(NpgsqlRumLinqExtensions).GetRuntimeMethod(name, parameters);
+
         readonly NpgsqlSqlExpressionFactory _sqlExpressionFactory;
+        readonly RelationalTypeMapping _doubleMapping;
 
         public NpgsqlRumMethodTranslator(NpgsqlSqlExpressionFactory sqlExpressionFactory, IRelationalTypeMappingSource typeMappingSource)
         {
             _sqlExpressionFactory = sqlExpressionFactory;
+            _doubleMapping = typeMappingSource.FindMapping(typeof(double));
         }
 
         public SqlExpression Translate(SqlExpression instance, MethodInfo method, IReadOnlyList<SqlExpression> arguments)
         {
-            if (method.DeclaringType == typeof(NpgsqlRumLinqExtensions))
-            {
-                if (method.Name == nameof(NpgsqlRumLinqExtensions.Distance))
-                {
-                    return BinaryOperator("<=>");
-                }
+            if (Functions.TryGetValue(method, out var function))
+                return _sqlExpressionFactory.Function(function, arguments, method.ReturnType);
 
-                if (method.Name == nameof(NpgsqlRumLinqExtensions.Score))
-                {
-                    return arguments.Count switch
-                    {
-                        2 => _sqlExpressionFactory.Function("rum_ts_score", arguments, method.ReturnType, _sqlExpressionFactory.FindMapping(method.ReturnType)),
-
-                        _ => throw new ArgumentException($"Invalid method overload for rum_ts_score")
-                    };
-                }
-            }
+            if (DoubleReturningOperators.TryGetValue(method, out var floatOperator))
+                return new SqlCustomBinaryExpression(
+                    _sqlExpressionFactory.ApplyDefaultTypeMapping(arguments[0]),
+                    _sqlExpressionFactory.ApplyDefaultTypeMapping(arguments[1]),
+                    floatOperator,
+                    _doubleMapping.ClrType,
+                    _doubleMapping);
 
             return null;
-
-            #pragma warning disable EF1001
-            SqlCustomBinaryExpression BinaryOperator(string @operator)
-            {
-                var inferredMapping = ExpressionExtensions.InferTypeMapping(arguments[0], arguments[1]);
-                return new SqlCustomBinaryExpression(
-                    _sqlExpressionFactory.ApplyTypeMapping(arguments[0], inferredMapping),
-                    _sqlExpressionFactory.ApplyTypeMapping(arguments[1], inferredMapping),
-                    @operator,
-                    method.ReturnType,
-                    inferredMapping);
-            }
-            #pragma warning restore EF1001
         }
     }
 }
