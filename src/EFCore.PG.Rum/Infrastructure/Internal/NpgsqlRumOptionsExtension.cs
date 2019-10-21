@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Internal
 
 namespace Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.Internal
 {
-    internal class NpgsqlRumOptionsExtension : IDbContextOptionsExtension
+    public class NpgsqlRumOptionsExtension : IDbContextOptionsExtension
     {
         public DbContextOptionsExtensionInfo Info => new ExtensionInfo(this);
 

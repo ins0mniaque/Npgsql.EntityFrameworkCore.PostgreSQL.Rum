@@ -14,7 +14,7 @@ using NpgsqlTypes;
 
 namespace Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Internal
 {
-    internal class NpgsqlRumMethodTranslator : IMethodCallTranslator
+    public class NpgsqlRumMethodTranslator : IMethodCallTranslator
     {
         static readonly Dictionary<MethodInfo, string> Functions = new Dictionary<MethodInfo, string>
         {

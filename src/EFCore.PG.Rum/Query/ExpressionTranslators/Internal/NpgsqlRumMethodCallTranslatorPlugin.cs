@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Internal;
 
 namespace Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Internal
 {
-    internal class NpgsqlRumMethodCallTranslatorPlugin : IMethodCallTranslatorPlugin
+    public class NpgsqlRumMethodCallTranslatorPlugin : IMethodCallTranslatorPlugin
     {
         public NpgsqlRumMethodCallTranslatorPlugin(
             IRelationalTypeMappingSource typeMappingSource,
