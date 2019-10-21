@@ -38,6 +38,8 @@ namespace Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Inte
             _doubleMapping = typeMappingSource.FindMapping(typeof(double));
         }
 
+#pragma warning disable EF1001
+        /// <inheritdoc />
         public SqlExpression Translate(SqlExpression instance, MethodInfo method, IReadOnlyList<SqlExpression> arguments)
         {
             if (Functions.TryGetValue(method, out var function))
@@ -53,5 +55,6 @@ namespace Npgsql.EntityFrameworkCore.PostgreSQL.Query.ExpressionTranslators.Inte
 
             return null;
         }
+#pragma warning restore EF1001
     }
 }
